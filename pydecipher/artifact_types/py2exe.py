@@ -170,7 +170,7 @@ class PYTHONSCRIPT:
                 "[!] Couldn't find any python magic numbers to hint at the python version of this resource. "
                 "Will attempt to brute-force determine the correct magic number."
             )
-            return
+            return []
 
     def _clean_filename(self, filename: str) -> str:
         new_filename: str = filename
@@ -188,6 +188,7 @@ class PYTHONSCRIPT:
         return new_filename
 
     def disassemble_and_dump(self, brute_force: bool = False):
+        disassembly_success = False
         code_bytes = self.resource_contents[self.marshalled_obj_start_idx :]
         hijacked_stderr = io.StringIO()
         with redirect_stderr(hijacked_stderr):
@@ -210,6 +211,7 @@ class PYTHONSCRIPT:
                     f"[+] Successfully disassembled bytecode with magic number {self.magic_num}, "
                     f"corresponding to Python version {magicint2version[self.magic_num]}"
                 )
+                disassembly_success = True
 
         for co in code_objects:
             new_filename: str = self._clean_filename(co.co_filename)
@@ -226,6 +228,8 @@ class PYTHONSCRIPT:
                 logger.error(f"[!] Could not write file {bytecode_filepath.name} with error: {e}")
             else:
                 logger.info(f"[+] Successfully wrote file {new_filename} to {self.output_dir}")
+
+        return disassembly_success
 
     @staticmethod
     def cleanup(output_dir: pathlib.Path):
@@ -262,4 +266,5 @@ class PYTHONSCRIPT:
             all_magic_nums = [magic_num for magic_num, python_version in magicint2version.items()]
             for magic_num in all_magic_nums:
                 self.magic_num = magic_num
-                self.disassemble_and_dump(brute_force=True)
+                if self.disassemble_and_dump(brute_force=True):
+                    break # break on first successful bruteforce
