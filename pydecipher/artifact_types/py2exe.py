@@ -26,6 +26,12 @@ from pydecipher.bytecode import version_str_to_magic_num_int
 # When we don't know exactly what version of Python was used to create
 BRUTE_FORCE_SUFFIX = ".BF.pyc"
 
+IGNORE = [
+    'bootstrap2.pyc',  # bootstrap added by py2exe
+    'boot_common.pyc',  # boot_common added by py2exe
+    'boothacks.pyc', # boot hacks added by py2exe
+]
+
 
 @pydecipher.register
 class PYTHONSCRIPT:
@@ -215,6 +221,8 @@ class PYTHONSCRIPT:
 
         for co in code_objects:
             new_filename: str = self._clean_filename(co.co_filename)
+            if new_filename in IGNORE:
+                continue
             self.output_dir.mkdir(parents=True, exist_ok=True)
             if brute_force:
                 bytecode_filepath: str = self.output_dir / magicint2version[self.magic_num] / new_filename
